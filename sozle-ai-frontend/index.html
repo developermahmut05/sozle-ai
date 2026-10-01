@@ -89,205 +89,231 @@
     </footer>
 
     <script>
-        const API_URL = 'http://localhost:3000';
-        
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        const micBtn = document.getElementById('mic-btn');
-        const wordDictationBtn = document.getElementById('word-dictation-btn');
-        const micStatus = document.getElementById('mic-status');
+      const API_URL = 'https://sozle-ai.onrender.com';
+  // const API_URL = 'http://localhost:3000';
+  
+  const chatContainer = document.getElementById('chat-container');
+  const userInput = document.getElementById('user-input');
+  const sendBtn = document.getElementById('send-btn');
+  const micBtn = document.getElementById('mic-btn');
+  const wordDictationBtn = document.getElementById('word-dictation-btn');
+  const micStatus = document.getElementById('mic-status');
 
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecording = false;
-        let isDictating = false;
+  let mediaRecorder;
+  let audioChunks = [];
+  let isRecording = false;
+  let isDictating = false;
 
-        // Habar goşmak funksiýasy
-        function appendMessage(text, sender) {
-            const div = document.createElement('div');
-            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} items-start space-x-2`;
-            
-            div.innerHTML = `
-                <div class="${sender === 'user' ? 'bg-emerald-600' : 'bg-slate-800 border border-slate-700'} text-white p-3 rounded-2xl max-w-md text-sm shadow">
-                    ${text}
-                </div>
-            `;
-            chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
+  // Habar goşmak funksiýasy
+  function appendMessage(text, sender) {
+      const div = document.createElement('div');
+      div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} items-start space-x-2`;
+      
+      div.innerHTML = `
+          <div class="${sender === 'user' ? 'bg-emerald-600' : 'bg-slate-800 border border-slate-700'} text-white p-3 rounded-2xl max-w-md text-sm shadow">
+              ${text}
+          </div>
+      `;
+      chatContainer.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
 
-        // Tekst ugratmak
-        async function sendMessage() {
-            const prompt = userInput.value.trim();
-            if (!prompt) return;
+  // Tekst ugratmak
+  async function sendMessage() {
+      const prompt = userInput.value.trim();
+      if (!prompt) return;
 
-            appendMessage(prompt, 'user');
-            userInput.value = '';
+      appendMessage(prompt, 'user');
+      userInput.value = '';
 
-            try {
-                const res = await fetch(`${API_URL}/api/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt })
-                });
+      try {
+          const res = await fetch(`${API_URL}/api/chat`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prompt })
+          });
 
-                if (!res.ok) {
-                    const errorText = await res.text();
-                    console.error("Serwer error text:", errorText);
-                    appendMessage("Serwer ýalňyşlygy ýüze çykdy (Status: " + res.status + ")", 'ai');
-                    return;
-                }
+          if (!res.ok) {
+              const errorText = await res.text();
+              console.error("Serwer error text:", errorText);
+              appendMessage("Serwer ýalňyşlygy ýüze çykdy (Status: " + res.status + ")", 'ai');
+              return;
+          }
 
-                const data = await res.json();
-                
-                if (data.response) {
-                    appendMessage(data.response, 'ai');
-                } else {
-                    appendMessage("Ýalňyşlyk ýüze çykdy.", 'ai');
-                }
-            } catch (err) {
-                console.error("Fetch catch error:", err);
-                appendMessage("Serwere birigip bolmady.", 'ai');
-            }
-        }
+          const data = await res.json();
+          
+          if (data.response) {
+              appendMessage(data.response, 'ai');
+          } else {
+              appendMessage("Ýalňyşlyk ýüze çykdy.", 'ai');
+          }
+      } catch (err) {
+          console.error("Fetch catch error:", err);
+          appendMessage("Serwere birigip bolmady.", 'ai');
+      }
+  }
 
-        sendBtn.addEventListener('click', sendMessage);
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
+  sendBtn.addEventListener('click', sendMessage);
+  userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+  });
 
-        // Ses ýazmak logikasy (MediaRecorder) - Terjime we Jogap üçin
-        micBtn.addEventListener('click', async () => {
-            if (!isRecording) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { echoCancellation: true, noiseSuppression: true } 
-                    });
-                    
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
+  // Ses ýazmak logikasy (MediaRecorder) - Terjime we Jogap üçin
+  micBtn.addEventListener('click', async () => {
+      if (!isRecording) {
+          try {
+              const stream = await navigator.mediaDevices.getUserMedia({ 
+                  audio: { echoCancellation: true, noiseSuppression: true } 
+              });
+              
+              // TELEFONLAR ÜÇIN FORMAT BARLAGY
+              let options = { mimeType: 'audio/webm' };
+              if (!MediaRecorder.isTypeSupported('audio/webm')) {
+                  if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                      options = { mimeType: 'audio/mp4' };
+                  } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+                      options = { mimeType: 'audio/ogg' };
+                  } else {
+                      options = {};
+                  }
+              }
 
-                    mediaRecorder.ondataavailable = (event) => {
-                        audioChunks.push(event.data);
-                    };
+              mediaRecorder = new MediaRecorder(stream, options);
+              audioChunks = [];
 
-                    mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        const formData = new FormData();
-                        formData.append('audio', audioBlob, 'voice.webm');
+              mediaRecorder.ondataavailable = (event) => {
+                  if (event.data && event.data.size > 0) {
+                      audioChunks.push(event.data);
+                  }
+              };
 
-                        micStatus.textContent = "Ses ugradylýar we işlenilýär...";
+              mediaRecorder.onstop = async () => {
+                  const mimeType = options.mimeType || mediaRecorder.mimeType || 'audio/webm';
+                  const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                  const audioBlob = new Blob(audioChunks, { type: mimeType });
+                  
+                  const formData = new FormData();
+                  formData.append('audio', audioBlob, `voice.${extension}`);
 
-                        try {
-                            const res = await fetch(`${API_URL}/api/upload-audio`, {
-                                method: 'POST',
-                                body: formData
-                            });
-                            const data = await res.json();
-                            
-                            micStatus.textContent = data.message || "Ses üstünlikli ugradyldy!";
-                            appendMessage("🎤 Sesli habar ugradyldy", 'user');
+                  micStatus.textContent = "Ses ugradylýar we işlenilýär...";
 
-                            if (data.response) {
-                                appendMessage(data.response, 'ai');
-                            }
-                        } catch (err) {
-                            console.error("Ses ugratma ýalňyşlygy:", err);
-                            micStatus.textContent = "Ses ugratmakda ýalňyşlyk!";
-                        }
-                    };
+                  try {
+                      const res = await fetch(`${API_URL}/api/upload-audio`, {
+                          method: 'POST',
+                          body: formData // Content-Type goşulmaýar!
+                      });
+                      const data = await res.json();
+                      
+                      micStatus.textContent = data.message || "Ses üstünlikli ugradyldy!";
+                      appendMessage("🎤 Sesli habar ugradyldy", 'user');
 
-                    mediaRecorder.start();
-                    isRecording = true;
-                    micBtn.classList.add('recording-active');
-                    micStatus.textContent = "🔴 Ýazga alynýar... Duruzmak üçin täzeden basyň.";
-                } catch (err) {
-                    console.error("Mikrofon hatasy:", err);
-                    alert("Mikrofon açylanda ýalňyşlyk: " + err.message);
-                }
-            } else {
-                mediaRecorder.stop();
-                isRecording = false;
-                micBtn.classList.remove('recording-active');
-                micStatus.textContent = "";
-            }
-        });
+                      if (data.response) {
+                          appendMessage(data.response, 'ai');
+                      }
+                  } catch (err) {
+                      console.error("Ses ugratma ýalňyşlygy:", err);
+                      micStatus.textContent = "Ses ugratmakda ýalňyşlyk!";
+                  }
+              };
 
-        // Smart Dictation (Durnukly we Ynamly Ses & Word Ýükleme Logikasy)
-        let dictationRecorder;
-        let dictationChunks = [];
+              mediaRecorder.start();
+              isRecording = true;
+              micBtn.classList.add('recording-active');
+              micStatus.textContent = "🔴 Ýazga alynýar... Duruzmak üçin täzeden basyň.";
+          } catch (err) {
+              console.error("Mikrofon hatasy:", err);
+              alert("Mikrofon açylanda ýalňyşlyk: " + err.message);
+          }
+      } else {
+          mediaRecorder.stop();
+          isRecording = false;
+          micBtn.classList.remove('recording-active');
+          micStatus.textContent = "";
+      }
+  });
 
-        wordDictationBtn.addEventListener('click', async () => {
-            if (!isDictating) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { echoCancellation: true, noiseSuppression: true } 
-                    });
-                    
-                    const options = MediaRecorder.isTypeSupported('audio/webm') 
-                        ? { mimeType: 'audio/webm' } 
-                        : { mimeType: 'audio/mp4' };
+  // Smart Dictation (Durnukly we Ynamly Ses & Word Ýükleme Logikasy)
+  let dictationRecorder;
+  let dictationChunks = [];
 
-                    dictationRecorder = new MediaRecorder(stream, options);
-                    dictationChunks = [];
+  wordDictationBtn.addEventListener('click', async () => {
+      if (!isDictating) {
+          try {
+              const stream = await navigator.mediaDevices.getUserMedia({ 
+                  audio: { echoCancellation: true, noiseSuppression: true } 
+              });
+              
+              let options = { mimeType: 'audio/webm' };
+              if (!MediaRecorder.isTypeSupported('audio/webm')) {
+                  if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                      options = { mimeType: 'audio/mp4' };
+                  } else {
+                      options = {};
+                  }
+              }
 
-                    dictationRecorder.ondataavailable = (event) => {
-                        if (event.data && event.data.size > 0) {
-                            dictationChunks.push(event.data);
-                        }
-                    };
+              dictationRecorder = new MediaRecorder(stream, options);
+              dictationChunks = [];
 
-                    dictationRecorder.onstop = async () => {
-                        micStatus.textContent = "Ses işlenilýär we tekst öwrülýär...";
+              dictationRecorder.ondataavailable = (event) => {
+                  if (event.data && event.data.size > 0) {
+                      dictationChunks.push(event.data);
+                  }
+              };
 
-                        if (dictationChunks.length === 0) {
-                            micStatus.textContent = "Ses tapylmady ýa-da ýazga alynmady.";
-                            return;
-                        }
+              dictationRecorder.onstop = async () => {
+                  micStatus.textContent = "Ses işlenilýär we tekst öwrülýär...";
 
-                        const audioBlob = new Blob(dictationChunks, { type: dictationRecorder.mimeType || 'audio/webm' });
-                        const formData = new FormData();
-                        formData.append('audio', audioBlob, 'dictation.webm');
+                  if (dictationChunks.length === 0) {
+                      micStatus.textContent = "Ses tapylmady ýa-da ýazga alynmady.";
+                      return;
+                  }
 
-                        try {
-                            const res = await fetch(`${API_URL}/api/dictate-audio`, {
-                                method: 'POST',
-                                body: formData
-                            });
-                            
-                            const data = await res.json();
-                            const transcriptionText = data.transcription || data.response || data.text;
+                  const mimeType = options.mimeType || dictationRecorder.mimeType || 'audio/webm';
+                  const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                  const audioBlob = new Blob(dictationChunks, { type: mimeType });
+                  
+                  const formData = new FormData();
+                  formData.append('audio', audioBlob, `dictation.${extension}`);
 
-                            if (transcriptionText && transcriptionText.trim()) {
-                                micStatus.textContent = "✅ Ses ýazgy tamamlandy!";
-                                userInput.value = transcriptionText.trim();
-                            } else {
-                                micStatus.textContent = "Sesde düşnükli söz tapylmady.";
-                            }
-                        } catch (err) {
-                            console.error("Ses ugratma ýalňyşlygy:", err);
-                            micStatus.textContent = "Serwer ýalňyşlygy ýüze çykdy!";
-                        }
-                    };
+                  try {
+                      const res = await fetch(`${API_URL}/api/dictate-audio`, {
+                          method: 'POST',
+                          body: formData
+                      });
+                      
+                      const data = await res.json();
+                      const transcriptionText = data.transcription || data.response || data.text;
 
-                    dictationRecorder.start(1000);
-                    isDictating = true;
-                    wordDictationBtn.classList.add('recording-active');
-                    micStatus.textContent = "🔴 Ses ýazga alynýar... Duruzmak üçin täzeden basyň.";
+                      if (transcriptionText && transcriptionText.trim()) {
+                          micStatus.textContent = "✅ Ses ýazgy tamamlandy!";
+                          userInput.value = transcriptionText.trim();
+                      } else {
+                          micStatus.textContent = "Sesde düşnükli söz tapylmady.";
+                      }
+                  } catch (err) {
+                      console.error("Ses ugratma ýalňyşlygy:", err);
+                      micStatus.textContent = "Serwer ýalňyşlygy ýüze çykdy!";
+                  }
+              };
 
-                } catch (err) {
-                    console.error("Mikrofon hatasy:", err);
-                    alert("Mikrofon açylanda ýalňyşlyk: " + err.message);
-                }
-            } else {
-                if (dictationRecorder && dictationRecorder.state !== "inactive") {
-                    dictationRecorder.stop();
-                }
-                isDictating = false;
-                wordDictationBtn.classList.remove('recording-active');
-            }
-        });
+              dictationRecorder.start(1000);
+              isDictating = true;
+              wordDictationBtn.classList.add('recording-active');
+              micStatus.textContent = "🔴 Ses ýazga alynýar... Duruzmak üçin täzeden basyň.";
+
+          } catch (err) {
+              console.error("Mikrofon hatasy:", err);
+              alert("Mikrofon açylanda ýalňyşlyk: " + err.message);
+          }
+      } else {
+          if (dictationRecorder && dictationRecorder.state !== "inactive") {
+              dictationRecorder.stop();
+          }
+          isDictating = false;
+          wordDictationBtn.classList.remove('recording-active');
+      }
+  });
     </script>
 </body>
 </html>

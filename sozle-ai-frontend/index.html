@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="tk" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sözle AI Terjime Platformasy</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="./assets/tailwind.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        /* Custom Smooth Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 76, 255, 0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.4); border-radius: 9999px; }
+
+        /* Neon Glow & Pulse Effects */
+        @keyframes neon-pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(244, 63, 94, 0.6), inset 0 0 15px rgba(244, 63, 94, 0.4); }
+            50% { transform: scale(1.08); box-shadow: 0 0 30px rgba(244, 63, 94, 0.9), inset 0 0 25px rgba(244, 63, 94, 0.7); }
+        }
+        .recording-active { animation: neon-pulse 1.2s infinite ease-in-out; background-color: rgb(225, 29, 72) !important; border-color: rgb(251, 113, 133) !important; }
+
+        @keyframes ai-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 170, 0.15); }
+            50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.3); }
+        }
+        .ai-glow-box { animation: ai-glow 4s infinite ease-in-out; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-slate-100 h-[100dvh] flex flex-col justify-between overflow-hidden relative">
+
+    <!-- Background Ambient Glow Effects -->
+    <div class="absolute top-0 left-1/4 w-72 h-72 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-0 right-1/4 w-72 h-72 bg-teal-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Header (Mobile Optimized) -->
+    <header class="bg-slate-900/80 backdrop-blur-xl border-b border-emerald-500/20 py-3 px-4 flex items-center justify-center text-center shadow-xl shrink-0 z-10 ai-glow-box">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/30 text-base">
+                🎙️
+            </div>
+            <div>
+                <h1 class="text-lg font-bold bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 bg-clip-text text-transparent tracking-wide">Sözle AI</h1>
+            </div>
+        </div>
+    </header>
+
+    <!-- Chat Messages Area -->
+    <main id="chat-container" class="flex-1 overflow-y-auto p-3.5 space-y-4 max-w-4xl w-full mx-auto z-10">
+        <!-- Welcome Message -->
+        <div class="flex items-start space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-sm shadow-md shrink-0 border border-emerald-400/30">
+                🤖
+            </div>
+            <div class="bg-slate-900/90 border border-slate-700/80 backdrop-blur-md text-slate-200 p-3.5 rounded-2xl rounded-tl-sm max-w-[85%] text-xs md:text-sm shadow-xl leading-relaxed">
+                <span class="font-bold text-emerald-400 text-white">Salam! Men Sözle AI. Size dünýädäki ähli diller arasynda terjime etmäge, sesli gatnaşmaga we dil bilimi boýunça kömek bermäge taýýar men. Näme kömek edip bilerin! 
+            </div>
+        </div>
+    </main>
+
+    <!-- Input Area (Mobile Optimized) -->
+    <footer class="bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800/80 p-3 shadow-2xl shrink-0 z-10">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center space-x-2 bg-slate-950/80 border border-slate-800 rounded-2xl p-1.5 shadow-inner focus-within:border-emerald-500/80 transition-all duration-300">
+                
+                <!-- Text Input (min-w-0 goşuldy - telefonlarda gysylmaz ýaly) -->
+                <input type="text" id="user-input" placeholder="Terjime ýa-da ses ugradyň..." 
+                    class="flex-1 min-w-0 bg-transparent px-3 py-2.5 text-xs md:text-sm text-slate-100 placeholder-slate-500 focus:outline-none">
+                
+                <!-- Send Button (shrink-0 goşuldy - ölçegi üýtgemez ýaly) -->
+                <button id="send-btn" class="shrink-0 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3.5 py-2.5 rounded-xl font-semibold text-xs md:text-sm transition-all shadow-md cursor-pointer">
+                    <span>Ugrat</span>
+                </button>
+
+                <!-- Mic Button -->
+                <button id="mic-btn" class="shrink-0 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white p-2.5 rounded-xl transition-all border border-slate-700 shadow-md cursor-pointer" title="Ses ýazmak">
+                    <span class="text-sm block">🎤</span>
+                </button>
+
+                <!-- Word Dictation Button -->
+                <button id="word-dictation-btn" class="shrink-0 bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white p-2.5 rounded-xl transition-all border border-slate-700 shadow-md cursor-pointer" title="Sesli Ses & Word-e Ýazdyrmak">
+                    <span class="text-sm block">🔊</span>
+                </button>
+            </div>
+            <div id="mic-status" class="text-center text-[10px] md:text-xs font-semibold text-emerald-400 h-4 mt-1 transition-all"></div>
+        </div>
+    </footer>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const micBtn = document.getElementById('mic-btn');
+        const wordDictationBtn = document.getElementById('word-dictation-btn');
+        const micStatus = document.getElementById('mic-status');
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let isDictating = false;
+
+        // Habar goşmak funksiýasy
+        function appendMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} items-start space-x-2`;
+            
+            div.innerHTML = `
+                <div class="${sender === 'user' ? 'bg-emerald-600' : 'bg-slate-800 border border-slate-700'} text-white p-3 rounded-2xl max-w-md text-sm shadow">
+                    ${text}
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Tekst ugratmak
+        async function sendMessage() {
+            const prompt = userInput.value.trim();
+            if (!prompt) return;
+
+            appendMessage(prompt, 'user');
+            userInput.value = '';
+
+            try {
+                const res = await fetch(`${API_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error("Serwer error text:", errorText);
+                    appendMessage("Serwer ýalňyşlygy ýüze çykdy (Status: " + res.status + ")", 'ai');
+                    return;
+                }
+
+                const data = await res.json();
+                
+                if (data.response) {
+                    appendMessage(data.response, 'ai');
+                } else {
+                    appendMessage("Ýalňyşlyk ýüze çykdy.", 'ai');
+                }
+            } catch (err) {
+                console.error("Fetch catch error:", err);
+                appendMessage("Serwere birigip bolmady.", 'ai');
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Ses ýazmak logikasy (MediaRecorder) - Terjime we Jogap üçin
+        micBtn.addEventListener('click', async () => {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: { echoCancellation: true, noiseSuppression: true } 
+                    });
+                    
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob, 'voice.webm');
+
+                        micStatus.textContent = "Ses ugradylýar we işlenilýär...";
+
+                        try {
+                            const res = await fetch(`${API_URL}/api/upload-audio`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const data = await res.json();
+                            
+                            micStatus.textContent = data.message || "Ses üstünlikli ugradyldy!";
+                            appendMessage("🎤 Sesli habar ugradyldy", 'user');
+
+                            if (data.response) {
+                                appendMessage(data.response, 'ai');
+                            }
+                        } catch (err) {
+                            console.error("Ses ugratma ýalňyşlygy:", err);
+                            micStatus.textContent = "Ses ugratmakda ýalňyşlyk!";
+                        }
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    micBtn.classList.add('recording-active');
+                    micStatus.textContent = "🔴 Ýazga alynýar... Duruzmak üçin täzeden basyň.";
+                } catch (err) {
+                    console.error("Mikrofon hatasy:", err);
+                    alert("Mikrofon açylanda ýalňyşlyk: " + err.message);
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                micBtn.classList.remove('recording-active');
+                micStatus.textContent = "";
+            }
+        });
+
+        // Smart Dictation (Durnukly we Ynamly Ses & Word Ýükleme Logikasy)
+        let dictationRecorder;
+        let dictationChunks = [];
+
+        wordDictationBtn.addEventListener('click', async () => {
+            if (!isDictating) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: { echoCancellation: true, noiseSuppression: true } 
+                    });
+                    
+                    const options = MediaRecorder.isTypeSupported('audio/webm') 
+                        ? { mimeType: 'audio/webm' } 
+                        : { mimeType: 'audio/mp4' };
+
+                    dictationRecorder = new MediaRecorder(stream, options);
+                    dictationChunks = [];
+
+                    dictationRecorder.ondataavailable = (event) => {
+                        if (event.data && event.data.size > 0) {
+                            dictationChunks.push(event.data);
+                        }
+                    };
+
+                    dictationRecorder.onstop = async () => {
+                        micStatus.textContent = "Ses işlenilýär we tekst öwrülýär...";
+
+                        if (dictationChunks.length === 0) {
+                            micStatus.textContent = "Ses tapylmady ýa-da ýazga alynmady.";
+                            return;
+                        }
+
+                        const audioBlob = new Blob(dictationChunks, { type: dictationRecorder.mimeType || 'audio/webm' });
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob, 'dictation.webm');
+
+                        try {
+                            const res = await fetch(`${API_URL}/api/dictate-audio`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            
+                            const data = await res.json();
+                            const transcriptionText = data.transcription || data.response || data.text;
+
+                            if (transcriptionText && transcriptionText.trim()) {
+                                micStatus.textContent = "✅ Ses ýazgy tamamlandy!";
+                                userInput.value = transcriptionText.trim();
+                            } else {
+                                micStatus.textContent = "Sesde düşnükli söz tapylmady.";
+                            }
+                        } catch (err) {
+                            console.error("Ses ugratma ýalňyşlygy:", err);
+                            micStatus.textContent = "Serwer ýalňyşlygy ýüze çykdy!";
+                        }
+                    };
+
+                    dictationRecorder.start(1000);
+                    isDictating = true;
+                    wordDictationBtn.classList.add('recording-active');
+                    micStatus.textContent = "🔴 Ses ýazga alynýar... Duruzmak üçin täzeden basyň.";
+
+                } catch (err) {
+                    console.error("Mikrofon hatasy:", err);
+                    alert("Mikrofon açylanda ýalňyşlyk: " + err.message);
+                }
+            } else {
+                if (dictationRecorder && dictationRecorder.state !== "inactive") {
+                    dictationRecorder.stop();
+                }
+                isDictating = false;
+                wordDictationBtn.classList.remove('recording-active');
+            }
+        });
+    </script>
+</body>
+</html>

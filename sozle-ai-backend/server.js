@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, '../sozle-ai-frontend')));
 // Uploads papkasy ýok bolsa döretmek
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
+    fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 // Gemini API Açaryny barlamak
@@ -31,16 +31,17 @@ if (!apiKey) {
 
 const ai = new GoogleGenAI({ apiKey });
 
-// Multer sazlamasy (Ses faýllary üçin)
+// Multer sazlamasy (Ses faýllary üçin) - DÜZELDILEN BÖLEK
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        cb(null, uploadDir); // <-- Ýönekeý 'uploads/' ýerine doly uploadDir ýoly berildi
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, 'sozle-ai-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
+
 const upload = multer({ 
     storage: storage,
     limits: { fileSize: 15 * 1024 * 1024 } // Iň köp 15 MB
